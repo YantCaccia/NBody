@@ -36,7 +36,7 @@ void bodiesForce(Body p[], int n, int myPartStart, int myPartNumberOfElements, f
 
 void computePositions(Body p[], int nBodies, int nIters, MPI_Datatype datatype, float dt, int offsets[], int sendrecvcount[], int rank)
 {
-    for (int iter = 1; iter <= nIters; iter++)
+    for (int iter = 0; iter < nIters; iter++)
     {
 
         // Bcast complete array to slaves
@@ -104,11 +104,15 @@ int main(int argc, char **argv)
         randomizeBodies(p, nBodies);
     }
 
+    // Fine 1a parte in comune
+
     // Debug
     debugPrint("After init", nBodies, p, rank);
 
     // Main computational part
     computePositions(p, nBodies, nIters, MPI_Body, dt, offsets, sendrecvcount, rank);
+
+    // Inizio 2a parte in comune
 
     MPI_Barrier(MPI_COMM_WORLD);
     double end = MPI_Wtime();

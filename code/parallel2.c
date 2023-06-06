@@ -41,10 +41,6 @@ void computePositions(Body p[], Body myBodies[], int nLocalBodies, int nIters, M
 
         MPI_Request requests[size];
 
-        // Compute forces, each slave just his part
-        bodiesForce(myBodies, nLocalBodies, myBodies, nLocalBodies, dt);
-        debugPrint("After local bodiesForce", nLocalBodies, myBodies, rank);
-
         // Non-blocking bcast to others slaves +
         // Receive from other slaves
         for (int i = 0; i < size; i++)
@@ -58,6 +54,10 @@ void computePositions(Body p[], Body myBodies[], int nLocalBodies, int nIters, M
             // 1 will be to send myBodies, size - 1 will be to receive other processes' myBodies
             MPI_Ibcast(buffer, count, datatype, i, MPI_COMM_WORLD, &requests[i]);
         }
+
+        // Compute forces, each slave just his part
+        bodiesForce(myBodies, nLocalBodies, myBodies, nLocalBodies, dt);
+        debugPrint("After local bodiesForce", nLocalBodies, myBodies, rank);
 
         // Compute forces with local bodies from other processes as they arrive
         for (int i = 0; i < size; i++)
