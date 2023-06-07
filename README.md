@@ -253,11 +253,158 @@ void computePositions(Body p[], Body myBodies[], int nLocalBodies, int nIters, M
 }
 ```
 In questa versione di *computePositions* ciascun processo effettua la Broadcast in modalità *non bloccante* verso gli altri processi, inviando il proprio array di Bodies. Questo perchè ciascun processo ha a disposizione solo la propria parte di bodies e non è a conoscenza dell'array completo di bodies (riempito e valido solo nel processo master). Inoltre, ciascun processo aspetta di ricevere, sempre in modalità non bloccante, la corrsipondente Broadcast dagli altri processi.
-Nel frattempo, calcola le velocities dei suoi bodies tenendo in considerazione solo le forze che intercorrono tra di essi. In seguito, ad ogni ricezione dei bodies dagli altri processi, aggiorna le velocities dei propri bodies considerando le forze che intercorrono tra essi e i bodies appena ricevurti.
+Nel frattempo, calcola le velocities dei suoi bodies tenendo in considerazione solo le forze che intercorrono tra di essi. In seguito, ad ogni ricezione dei bodies dagli altri processi, aggiorna le velocities dei propri bodies considerando le forze che intercorrono tra essi e i bodies appena ricevuti.
 Infine, completate tutte le ricezioni e le relative computazioni delle velocities, aggiorna le posizioni dei propri bodies.
 
-# Execution instructions
+# Istruzioni per l'esecuzione
+Per poter eseguire uno dei due risultori procedere in questo modo:
 
-# Correctness discussion
+## Compilazione
+```
+mpicc ./parallelX.c ./mycollective/mycollective.c -o parallelX.out -lm
+```
+N.B. Sostuire *X* con la versione della soluzione (*1* o *2*).
+
+N.B. Il flag *-lm* serve a linkare la libreria math.h.
+
+## Esecuzione
+```
+mpirun --allow-run-as-root -np {np} parallelX.out {nBodies} {nIters} {resultsFileName}
+```
+### Parametri per l'esecuzione
+
+| Parametro | Descrizione | Default |
+| ----------- | ----------- | ----------- |
+| np | numero di processi che partecipano alla computazione | NA
+| nBodies | numero di bodies che faranno parte del problema | 10000
+| nIters | numero di iterazioni per le quali calcolare velocities e posizioni dei bodies | 5
+| resultsFileName | il path del file che verrà creato per salvare il risultato dell'esecuzione | "../results.txt"
+
+# Correttezza
+Per verificare la correttezza delle implementazioni proposte sono state eseguite le due soluzioni in modalità sequenziale. In seguito sono stati confrontati i risultati ottenuti con quelli delle esecuzioni in modalità concorrente, a 2 e 4 processi. Tali esperimenti sono stati eseguiti sull'[immagine docker](https://hub.docker.com/r/spagnuolocarmine/docker-mpi) messa a disposizione contestualmente al corso di PCPC.
+
+È possibile affermare che le soluzioni proposte sono *corrette* in quanto, fissando il numero di bodies e le proprietà iniziali di ciascuno, esse restituiscono risultati analoghi a prescindere dal numero di processi utilizzati per risolvere l'istanza del problema.
+
+Di seguito alcuni snippets dei file di output delle esecuzioni su 2000 bodies, 10 iterazioni e 1 - 2 - 4 processi. I file completi sono disponibili in repo, nella cartella [results/correctness](https://github.com/YantCaccia/NBody/tree/main/results/correctness).
+
+## Soluzione 1
+### 1 processo
+```
+Total time: 4.556783s
+
+p[0].x: -4.227	p[0].y: 7.640	p[0].z: -0.369
+p[0].vx: -58.966	p[0].vy: 107.754	p[0].vz: -6.206
+
+p[1].x: 4.723	p[1].y: -1.230	p[1].z: 2.788
+p[1].vx: 65.296	p[1].vy: -16.801	p[1].vz: 39.495
+
+p[2].x: 4.839	p[2].y: -0.219	p[2].z: -0.277
+p[2].vx: 66.897	p[2].vy: -3.576	p[2].vz: -5.116
+
+p[3].x: 2.107	p[3].y: -2.154	p[3].z: 2.179
+p[3].vx: 31.029	p[3].vy: -38.062	p[3].vz: 29.727
+
+p[4].x: 4.880	p[4].y: 2.188	p[4].z: 9.385
+p[4].vx: 70.928	p[4].vy: 32.306	p[4].vz: 135.201
+```
+### 2 processi
+```
+Total time: 2.353013s
+
+p[0].x: -4.227	p[0].y: 7.640	p[0].z: -0.369
+p[0].vx: -58.966	p[0].vy: 107.754	p[0].vz: -6.206
+
+p[1].x: 4.723	p[1].y: -1.230	p[1].z: 2.788
+p[1].vx: 65.296	p[1].vy: -16.801	p[1].vz: 39.495
+
+p[2].x: 4.839	p[2].y: -0.219	p[2].z: -0.277
+p[2].vx: 66.897	p[2].vy: -3.576	p[2].vz: -5.116
+
+p[3].x: 2.107	p[3].y: -2.154	p[3].z: 2.179
+p[3].vx: 31.029	p[3].vy: -38.062	p[3].vz: 29.727
+
+p[4].x: 4.880	p[4].y: 2.188	p[4].z: 9.385
+p[4].vx: 70.928	p[4].vy: 32.306	p[4].vz: 135.201
+```
+### 4 processi
+```
+Total time: 1.378734s
+
+p[0].x: -4.227	p[0].y: 7.640	p[0].z: -0.369
+p[0].vx: -58.966	p[0].vy: 107.754	p[0].vz: -6.206
+
+p[1].x: 4.723	p[1].y: -1.230	p[1].z: 2.788
+p[1].vx: 65.296	p[1].vy: -16.801	p[1].vz: 39.495
+
+p[2].x: 4.839	p[2].y: -0.219	p[2].z: -0.277
+p[2].vx: 66.897	p[2].vy: -3.576	p[2].vz: -5.116
+
+p[3].x: 2.107	p[3].y: -2.154	p[3].z: 2.179
+p[3].vx: 31.029	p[3].vy: -38.062	p[3].vz: 29.727
+
+p[4].x: 4.880	p[4].y: 2.188	p[4].z: 9.385
+p[4].vx: 70.928	p[4].vy: 32.306	p[4].vz: 135.201
+```
+
+## Soluzione 2
+### 1 processo
+```
+Total time: 4.561903s
+
+p[0].x: -4.227	p[0].y: 7.640	p[0].z: -0.369
+p[0].vx: -58.966	p[0].vy: 107.754	p[0].vz: -6.206
+
+p[1].x: 4.723	p[1].y: -1.230	p[1].z: 2.788
+p[1].vx: 65.296	p[1].vy: -16.801	p[1].vz: 39.495
+
+p[2].x: 4.839	p[2].y: -0.219	p[2].z: -0.277
+p[2].vx: 66.897	p[2].vy: -3.576	p[2].vz: -5.116
+
+p[3].x: 2.107	p[3].y: -2.154	p[3].z: 2.179
+p[3].vx: 31.029	p[3].vy: -38.062	p[3].vz: 29.727
+
+p[4].x: 4.880	p[4].y: 2.188	p[4].z: 9.385
+p[4].vx: 70.928	p[4].vy: 32.306	p[4].vz: 135.201
+```
+### 2 processi
+```
+Total time: 2.401930s
+
+p[0].x: -4.227	p[0].y: 7.640	p[0].z: -0.369
+p[0].vx: -58.966	p[0].vy: 107.754	p[0].vz: -6.206
+
+p[1].x: 4.723	p[1].y: -1.230	p[1].z: 2.788
+p[1].vx: 65.296	p[1].vy: -16.801	p[1].vz: 39.496
+
+p[2].x: 4.839	p[2].y: -0.218	p[2].z: -0.276
+p[2].vx: 66.898	p[2].vy: -3.576	p[2].vz: -5.110
+
+p[3].x: 2.107	p[3].y: -2.153	p[3].z: 2.179
+p[3].vx: 31.030	p[3].vy: -38.039	p[3].vz: 29.723
+
+p[4].x: 4.880	p[4].y: 2.188	p[4].z: 9.385
+p[4].vx: 70.928	p[4].vy: 32.306	p[4].vz: 135.200
+```
+### 4 processi
+```
+Total time: 1.332988s
+
+p[0].x: -4.227	p[0].y: 7.640	p[0].z: -0.369
+p[0].vx: -58.967	p[0].vy: 107.753	p[0].vz: -6.207
+
+p[1].x: 4.723	p[1].y: -1.230	p[1].z: 2.788
+p[1].vx: 65.296	p[1].vy: -16.801	p[1].vz: 39.495
+
+p[2].x: 4.839	p[2].y: -0.219	p[2].z: -0.277
+p[2].vx: 66.896	p[2].vy: -3.576	p[2].vz: -5.118
+
+p[3].x: 2.107	p[3].y: -2.153	p[3].z: 2.179
+p[3].vx: 31.033	p[3].vy: -38.039	p[3].vz: 29.724
+
+p[4].x: 4.880	p[4].y: 2.188	p[4].z: 9.385
+p[4].vx: 70.928	p[4].vy: 32.306	p[4].vz: 135.200
+```
+
+
 
 # Benchmarks with strong and weak scalability.
