@@ -407,5 +407,27 @@ p[4].vx: 70.928	p[4].vy: 32.306	p[4].vz: 135.200
 ```
 
 # Benchmarks
+Per effettuare i benchmarks è stato utilizzato un cluster di 4 istanze Compute Engine di Google Cloud di tipo e2-standard-8. Ciascuna istanza offre 32GB di RAM e 8vCPU; di queste, solo 4 sono realmente core fisici, per un totale di 16 core effettivi per l'intero cluster.
+
+Sono state testate sia la scalabilità forte che la scalabilità debole per entrambe le soluzioni.
+Di seguito sono riportati alcuni grafici che raffigurano i risultati ottenuti.
+Per maggior precisione e più dettagli di ciascuna istanza del problema, si rimanda alla [cartella contente i file di output](https://github.com/YantCaccia/NBody/tree/main/results).
 ## Scalabilità forte
+Per la scalabilità forte è stata eseguita un'istanza del problema con 10k bodies e 10 iterazioni, variando di volta in volta il numero di processi partecipanti al computo.
+
+![img](images/strongP1.png)
+
+
+![img](images/strongP2.png)
+
 ## Scalabilità debole
+Per la scalabilità debole si è scelto di eseguire un'istanza del problema con 2k bodies per ciascun processo e 10 iterazioni. In totale quindi il numero di bodies è variato da 2k a 32k.
+
+![img](images/weakP1.png)
+
+
+![img](images/weakP2.png)
+
+# Conclusioni
+
+
