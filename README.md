@@ -98,7 +98,8 @@ void randomizeBodies(Body p[], int n)
     }
 }
 ```
-Questa funzione inizializza in maniera randomica n bodies all'interno dell'array p.
+Questa funzione inizializza in maniera pseudo-randomica n bodies all'interno dell'array p.
+È importante sottolineare che ad esecuzioni diverse del programma corrispondono uguali inizializzazioni dei primi n bodies (ovvero, eseguendo il programma con n bodies e successivamente con n + x bodies, i primi n bodies della seconda esecuzione sono inizializzati con gli stessi valori degli n bodies della prima esecuzione). Ciò è vero perchè la funzione rand() genera numeri a partire da un seed, e fissando il seed la sequenza di numeri generati rimane costante. Nel nostro caso, il seed utilizzato dalla funzione rand() è quello di default, cioè 1.
 
 ## bodiesPosition
 ```
@@ -405,6 +406,6 @@ p[4].x: 4.880	p[4].y: 2.188	p[4].z: 9.385
 p[4].vx: 70.928	p[4].vy: 32.306	p[4].vz: 135.200
 ```
 
-
-
-# Benchmarks with strong and weak scalability.
+# Benchmarks
+## Scalabilità forte
+## Scalabilità debole
