@@ -409,7 +409,7 @@ p[4].vx: 70.928	p[4].vy: 32.306	p[4].vz: 135.200
 # Benchmarks
 Per effettuare i benchmarks è stato utilizzato un cluster di 4 istanze Compute Engine di Google Cloud di tipo e2-standard-8. Ciascuna istanza offre 32GB di RAM e 8vCPU; di queste, solo 4 sono realmente core fisici, per un totale di 16 core effettivi per l'intero cluster.
 
-Sono state testate sia la scalabilità forte che la scalabilità debole per entrambe le soluzioni.
+Sono state testate sia la scalabilità forte che la scalabilità debole *per entrambe le soluzioni*.
 Di seguito sono riportati alcuni grafici che raffigurano i risultati ottenuti.
 Per maggior precisione e più dettagli di ciascuna istanza del problema, si rimanda alla [cartella contente i file di output](https://github.com/YantCaccia/NBody/tree/main/results).
 ## Scalabilità forte
@@ -430,4 +430,8 @@ Per la scalabilità debole si è scelto di eseguire un'istanza del problema con 
 
 # Conclusioni
 
+In linea generale è possibile affermare che la distribuzione del carico di lavoro su più processi e la loro parallelizzazione ha permesso di raggiungere risultati soddisfacenti. I benchmarks di scalabilità forte hanno evidenziato che il tempo di esecuzione dei due risolutori diminuisce sempre all'aumentare del numero di processi che partecipano alla computazione. È probabile che esso possa diminuire ancora aumentando il numero di processi oltre l'attuale soglia di 16. Allo stato attuale e considerando solo i run i cui output sono in repo, lo speedup massimo ottenuto è pari a 15.5, con la Soluzione 2.
 
+I risultati ottenuti dai benchmarks di scalabilità debole sono invece meno soddisfacenti. Il tempo di esecuzione all'aumentare dei processi (e quindi del numero di bodies totali) è sempre aumentato, mentre l'obiettivo (corrispondente all'ottimo desiderato, quasi impossibile da ottenere nel contesto in cui si è lavorato) era che rimanesse costante.
+
+Ciò che sorprende maggiormente è che entrambe le versioni del risolutore hanno ottenuto performance praticamente identiche. I tempi di esecuzione sono molto vicini (variano di decimi di secondo) e gli speedup ottenuti sono analoghi (a parità di numero di bodies e di processi), come è possibile verificare dai file di output e dai grafici poco sopra. Ciò accade nonostante le differenze nelle modalità di comunicazione e sincronizzazione tra processi siano non banali. In particolare l'utilizzo di comunicazione in modalità non bloccante e la taglia minore di ciascun messaggio scambiato (ogni processo invia / riceve solo una parte del totale dei bodies) suggerirebbero che la Soluzione 2 sia più veloce. Invece, l'overhead introdotto dall'elevato numero di messaggi scambiati nella Soluzione 2 (ogni processo invia e riceve a / da *tutti* gli altri processi) compensa la taglia più grande dei messaggi scambiati dalla Soluzione 1. In tale implementazione il numero di messaggi è minore, poichè ad ogni iterazione ogni processo invia e riceve solo al / dal master, ma ciascun messaggio è più grande in quanto viene scambiato l'array completo di bodies. 
