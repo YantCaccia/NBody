@@ -1,44 +1,46 @@
-# Introduzione
-Nel problema N-Body, ci troviamo di fronte alla sfida di determinare le posizioni e le velocità di una serie di particelle interagenti nel corso del tempo. Immaginiamo, ad esempio, un astrofisico che desideri conoscere le posizioni e le velocità di un gruppo di stelle, oppure un chimico interessato alle posizioni e alle velocità di una collezione di molecole o atomi.
+# Introduction
+In the N-Body problem, we are faced with the challenge of determining the positions and velocities of a collection of interacting particles over time. Imagine, for example, an astrophysicist who wishes to know the positions and velocities of a group of stars, or a chemist interested in the positions and velocities of a collection of molecules or atoms.
 
-Per affrontare questo compito ci si serve di un risolutore, un programma in grado di trovare la soluzione al problema simulando il comportamento delle particelle. L'input richiesto comprende la massa, la posizione e la velocità di ciascuna particella all'inizio della simulazione, mentre l'output tipicamente fornisce le posizioni e le velocità di ogni particella in una sequenza di tempi o al termine di un determinato intervallo di tempo specificati dall'utente.
+To tackle this task we use a solver, a program that can find the solution to the problem by simulating particle behavior. The required input includes the mass, position, and velocity of each particle at the beginning of the simulation, while the output typically provides the positions and velocities of each particle at a sequence of times or at the end of a user-specified time interval.
 
-Ai fini del progetto si è scelto di implementare il risolutore servendosi della soluzione banale quadratica rispetto al numero di particelle. Tuttavia si noti che esistono anche altre soluzioni più efficienti, ad esempio quella che utilizza l'algoritmo di Barnes-Hut.
+For the purposes of this project, it was chosen to implement the solver by serving the trivial quadratic solution with respect to the number of particles. However, it should be noted that there are also other more efficient solutions, for example, one that uses the Barnes-Hut algorithm.
 
-Il risolutore è stato testato sulla piattaforma Google Cloud su un cluster di 4 istanze e2-standard-8. Ciascuna istanza offre 32GB di RAM e 8vCPU; di queste, solo 4 sono realmente core fisici, per un totale di 16 core effettivi per l'intero cluster.
+The solver was tested on the Google Cloud platform on a cluster of 4 e2-standard-8 instances. Each instance offers 32GB of RAM and 8vCPUs; of these, only 4 are actually physical cores, for a total of 16 actual cores for the entire cluster.
 
-# Le soluzioni proposte
-Il risolutore è stato implementato 2 volte.
-Entrambe le versioni parallelizzano la versione sequenziale del risolutore fornitoci contestualmente all'assegnazione del progetto.
-La differenza tra le 2 soluzioni risiede nelle modalità di comunicazione e sincronizzazione tra processi.
+Translated with DeepL.com (free version)
+
+# Proposed solutions
+The solver was implemented 2 times.
+Both versions parallel the sequential version of the solver provided to us at the same time as the project assignment.
+The difference between the 2 solutions lies in the way processes communicate and synchronize with each other.
  
-## Soluzione 1
-In questa soluzione si è seguito l'approccio più semplice e lineare possibile.
+## Solution 1
+In this solution, the simplest and most straightforward approach was followed.
 
-Ad ogni iterazione, l'intero array contente le informazioni su tutti i bodies del problema viene mandato in broadcast a tutti i processi che partecipano alla computazione della soluzione.
+At each iteration, the entire array containing information about all the bodies in the problem is broadcast to all the processes participating in the computation of the solution.
 
-Ciascuno di essi è in grado di conoscere quale è la parte di questo array che deve computare. Per ogni body appartenente alla propria parte di array, il processo aggiorna le velocities.
+Each of them is able to know which part of this array it has to compute. For each body belonging to its part of the array, the process updates the velocities.
 
-Le informazioni così calcolate vengono raccolte dal processo master, che infine aggiorna la posizione di ciascun body.
+The information thus computed is collected by the master process, which finally updates the position of each body.
 
-## Soluzione 2
-La Soluzione 2 è più creativa.
+## Solution 2
+Solution 2 is more creative.
 
-Inizialmente il processo master suddivide l'array di body in tante parti quanti sono i processi che partecipano alla computazione. Ad ogni processo viene inviata una parte di array.
+Initially, the master process divides the body array into as many parts as there are processes participating in the computation. Each process is sent a part of the array.
 
-Ad ogni iterazione, ciascun processo:
-* invia i propri bodies in broadcast a tutti gli altri processi;
-* calcola le velocities dei propri bodies considerando solo le forze che intercorrono tra di essi;
-* riceve da ogni processo n i bodies del processo n;
-* ad ogni ricezione dal processo n, aggiorna le velocities dei propri bodies considerando solo le forze che intercorrono tra essi e i bodies del processo n;
-* completate tutte le ricezioni e le relative computazioni delle velocities, aggiorna le posizioni dei propri bodies.
+At each iteration, each process:
+* sends its own bodies in broadcast to all other processes;
+* calculates the velocities of its own bodies considering only the forces between them;
+* receives from each process n the bodies of process n;
+* at each reception from process n, updates the velocities of its own bodies considering only the forces between them and the bodies of process n;
+* having completed all the receptions and related velocities computations, it updates the positions of its own bodies.
 
-Al termine delle n iterazioni (numero deciso dall'utente), il processo master raccoglie tutti i bodies per la stampa dei risultati.
+At the end of n iterations (number decided by the user), the master process collects all the bodies for printing the results.
 
-# Dettagli implementativi
-L'implementazione delle due soluzioni è stata scritta in C, servendosi della libreria OpenMPI per parallelizzare le operazioni. Essa è un'implementazione open source di MPI sviluppata e mantenuta da un consorzio di partner di ricerca e industriali. MPI è uno standard di message-passing standardizzato e portabile, progettato per funzionare su architetture di calcolo parallelo. Esso definisce la sintassi e la semantica di librerie utilizzate per scrivere programmi di message-passing portabili in C e altri linguaggi di programmazione.
+# Implementation details
+The implementation of the two solutions was written in C, making use of the OpenMPI library to parallelize operations. It is an open source implementation of MPI developed and maintained by a consortium of research and industry partners. MPI is a standardized, portable message-passing standard designed to run on parallel computing architectures. It defines the syntax and semantics of libraries used to write portable message-passing programs in C and other programming languages.
 
-Alcuni snippets / funzioni vengono utilizzati da entrambe le soluzioni. Vediamole:
+Some snippets/functions are used by both solutions. Let's look at them:
 
 ## Body structure
 ```
@@ -47,8 +49,8 @@ typedef struct
     float x, y, z, vx, vy, vz;
 } Body;
 ```
-È la struttura che rappresenta il singolo Body.
-Ciascun Body è formato dalle *posizioni* (.x, .y, .z) e dalle *velocities* (.vx, .vy, .vz).
+This is the structure that represents the individual Body.
+Each Body consists of the *positions* (.x, .y, .z) and the *velocities* (.vx, .vy, .vz).
 
 ## int compute_sendreceivecount_withoffset
 ```
@@ -73,14 +75,14 @@ int compute_sendreceivecount_withoffset(int sendbufsize, int send_recv_count[], 
     }
 }
 ```
-Questa funzione calcola il numero di oggetti da computare per ciascun processo.
-Il calcolo viene eseguito distribuendo in maniera equa lo stesso numero di oggetti su ciascun processo.
-Se ciò non è possibile (cioè se la divisione nOggetti/nProcessi non ha resto 0) i rimanenti oggetti vengono distribuiti in maniera equa sui primi m processi, con m pari al resto della divisione di cui sopra.
+This function calculates the number of objects to be computed for each process.
+The computation is performed by equally distributing the same number of objects over each process.
+If this is not possible (i.e., if the nObjects/nProcesses division has no remainder 0) the remaining objects are distributed equally over the first m processes, with m equal to the remainder of the division above.
 
-Nel codice, *sendbufsize* è il numero totale di oggetti da processare e *size* è il numero di processi che partecipano al calcolo.
-I due array *send_recv_count* e *offsets* vengono utilizzati per memorizzare l'output della funzione:
-* send_recv_count[i] conterrà il numero di oggetti da processare dal processo con *rank* i;
-* offsets[i] conterrà l'indice del primo oggetto da processare dal processo con *rank* i nell'array contenente tutti gli oggetti; viene utilizzato come parametro *displs* nelle chiamate a funzioni di comunicazione collettiva messe a disposizione da MPI.
+In the code, *sendbufsize* is the total number of objects to be processed and *size* is the number of processes participating in the calculation.
+The two arrays *send_recv_count* and *offsets* are used to store the output of the function:
+* send_recv_count[i] will contain the number of objects to be processed by the process with *rank* i;
+* offsets[i] will contain the index of the first object to be processed by the process with *rank* i in the array containing all objects; it is used as the *displs* parameter in calls to collective communication functions provided by MPI.
 
 
 ## randomizeBodies
@@ -98,8 +100,8 @@ void randomizeBodies(Body p[], int n)
     }
 }
 ```
-Questa funzione inizializza in maniera pseudo-randomica n bodies all'interno dell'array p.
-È importante sottolineare che ad esecuzioni diverse del programma corrispondono uguali inizializzazioni dei primi n bodies (ovvero, eseguendo il programma con n bodies e successivamente con n + x bodies, i primi n bodies della seconda esecuzione sono inizializzati con gli stessi valori degli n bodies della prima esecuzione). Ciò è vero perchè la funzione rand() genera numeri a partire da un seed, e fissando il seed la sequenza di numeri generati rimane costante. Nel nostro caso, il seed utilizzato dalla funzione rand() è quello di default, cioè 1.
+This function pseudo-randomly initializes n bodies within the array p.
+It is important to note that different executions of the program correspond to equal initializations of the first n bodies (i.e., by executing the program with n bodies and then with n + x bodies, the first n bodies of the second execution are initialized with the same values as the n bodies of the first execution). This is true because the rand() function generates numbers from a seed, and by fixing the seed the sequence of numbers generated remains constant. In our case, the seed used by the rand() function is the default seed, which is 1.
 
 ## bodiesPosition
 ```
@@ -113,13 +115,13 @@ void bodiesPosition(Body p[], int nBodies, float dt)
     }
 }
 ```
-Questa funzione aggiorna le posizioni di *nBodies* bodies all'interno dell'array p.
-Viene chiamata al termine di ciascuna iterazione, ma:
-* Nella Soluzione 1, viene chiamata dal processo master che aggiorna le posizioni di tutti i bodies del problema;
-* Nella Soluzione 2, viene chiamata da ciascun processo che aggiorna le posizioni solo dei propri bodies.
+This function updates the positions of *nBodies* bodies within the array p.
+It is called at the end of each iteration, but:
+* In Solution 1, it is called by the master process that updates the positions of all bodies in the problem;
+* In Solution 2, it is called by each process that updates the positions of only its own bodies.
 
 ## main
-Gran parte della funzione main è uguale nelle due soluzioni.
+Much of the main function is the same in the two solutions.
 ```
 // Init MPI
 MPI_Init(&argc, &argv);
@@ -129,7 +131,7 @@ int rank, size;
 MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 MPI_Comm_size(MPI_COMM_WORLD, &size);
 ```
-Si inizializza OpenMPI e e si salvano il numero di processi che partecipano alla computazione (*size*) e il rank del processo locale (*rank*).
+We initialize OpenMPI and and save the number of processes participating in the computation (*size*) and the rank of the local process (*rank*).
 
 ```
 // Take parameters from input
@@ -137,10 +139,10 @@ int nBodies = argc > 1 ? atoi(argv[1]) : DEFAULT_NBODIES;
 int nIters = argc > 2 ? atoi(argv[2]) : DEFAULT_NITERS;
 const char *resultsFileName = argc > 3 ? argv[3] : DEFAULT_FILENAME;
 ```
-Si legge dagli argomenti da riga di comando alcuni parametri utili per l'esecuzione:
-* *nBodies*: numero di bodies in input al problema
-* *nIters*: numero di iterazioni da computare; ciascuna iterazione calcola le velocities e le posizioni dei bodies ad un intervallo di 0.01s rispetto all'iterazione precedente;
-* *resultsFileName*: il nome del file all'interno del quale scrivere i risultati finali dell'esecuzione.
+We reads from the command line arguments some useful parameters for execution:
+* *nBodies*: number of bodies as input to the problem.
+* *nIters*: number of iterations to compute; each iteration computes the velocities and locations of the bodies at an interval of 0.01s from the previous iteration;
+* *resultsFileName*: the name of the file within which to write the final results of the execution.
 
 ```
 // Compute sendcount and offsets
@@ -148,7 +150,7 @@ int sendrecvcount[size];
 int offsets[size];
 compute_sendreceivecount_withoffset(nBodies, sendrecvcount, offsets, size);
 ```
-Si calcola per ciascun processo il numero di bodies da computare e l'indice di partenza nell'array di bodies completo.
+The number of bodies to be computed and the starting index in the complete bodies array are calculated for each process.
 
 ```
 // Create new MPI_Datatype for Body
@@ -156,7 +158,7 @@ MPI_Datatype MPI_Body;
 MPI_Type_contiguous(6, MPI_FLOAT, &MPI_Body);
 MPI_Type_commit(&MPI_Body);
 ```
-Si crea una nuovo MPI_Datatype che rappresenta la struttura Body. La scelta di creare un MPI_Datatype ha permesso di utilizzare le funzioni di comunicazione collettiva di MPI con maggior semplicità logica e sintattica.
+A new MPI_Datatype representing the Body structure is created. The choice of creating an MPI_Datatype allowed MPI's collective communication functions to be used with greater logical and syntactic simplicity.
 
 ```
 // Init bodies pos & vel
@@ -165,12 +167,12 @@ if (rank == 0)
     randomizeBodies(p, nBodies);
 }
 ```
-Si inizializza l'array di Body *p* dal processo master.
+We initialize the Body *p* array from the master process.
 
 ## computePositions 
-La grande differenza implementativa tra le due soluzioni risiede nella funzione *computePositions*.
+The big implementation difference between the two solutions lies in the *computePositions* function.
 
-### Soluzione 1
+### Solution 1
 ```
 void computePositions(Body p[], int nBodies, int nIters, MPI_Datatype datatype, float dt, int offsets[], int sendrecvcount[], int rank)
 {
@@ -200,12 +202,12 @@ void computePositions(Body p[], int nBodies, int nIters, MPI_Datatype datatype, 
     }
 }
 ```
-In questa versione di *computePositions* ad ogni iterazione viene eseguito il Broadcast dal master a tutti gli altri processi di tutto l'array completo di bodies.
-Ogni processo chiama poi la *bodiesForce*, che aggiorna le velocities *solo dei suoi bodies* ma avendo a disposizione *tutti* i bodies.
-I bodies così aggiornati vengono ripresi attraverso la Gather dal processo master.
-Esso poi aggiorna le *posizioni* di tutti i bodies. 
+In this version of *computePositions* at each iteration the Broadcast from the master to all other processes of the complete array of bodies is performed.
+Each process then calls the *bodiesForce*, which updates the velocities *only of its bodies* but having *all* bodies available.
+The bodies thus updated are taken back through the Gather by the master process.
+It then updates the *positions* of all the bodies. 
 
-### Soluzione 2
+### Solution 2
 ```
 void computePositions(Body p[], Body myBodies[], int nLocalBodies, int nIters, MPI_Datatype datatype, float dt, int offsets[], int sendrecvcount[], int rank, int size)
 {
@@ -253,43 +255,43 @@ void computePositions(Body p[], Body myBodies[], int nLocalBodies, int nIters, M
     }
 }
 ```
-In questa versione di *computePositions* ciascun processo effettua la Broadcast in modalità *non bloccante* verso gli altri processi, inviando il proprio array di Bodies. Questo perchè ciascun processo ha a disposizione solo la propria parte di bodies e non è a conoscenza dell'array completo di bodies (riempito e valido solo nel processo master). Inoltre, ciascun processo aspetta di ricevere, sempre in modalità non bloccante, la corrsipondente Broadcast dagli altri processi.
-Nel frattempo, calcola le velocities dei suoi bodies tenendo in considerazione solo le forze che intercorrono tra di essi. In seguito, ad ogni ricezione dei bodies dagli altri processi, aggiorna le velocities dei propri bodies considerando le forze che intercorrono tra essi e i bodies appena ricevuti.
-Infine, completate tutte le ricezioni e le relative computazioni delle velocities, aggiorna le posizioni dei propri bodies.
+In this version of *computePositions* each process performs Broadcast in *non-blocking* mode to the other processes, sending its own array of Bodies. This is because each process has only its own part of the bodys available and is not aware of the full array of bodys (filled and valid only in the master process). In addition, each process waits to receive, again in non-blocking mode, the corresponding Broadcast from the other processes.
+Meanwhile, it calculates the velocities of its bodies taking into account only the forces between them. Then, each time it receives bodies from the other processes, it updates the velocities of its own bodies considering the forces between them and the bodies it has just received.
+Finally, having completed all the receptions and related velocities computations, it updates the positions of its own bodies.
 
-# Istruzioni per l'esecuzione
-Per poter eseguire uno dei due risultori procedere in questo modo:
+# Instructions for execution.
+In order to execute one of the two resultors proceed as follows:
 
-## Compilazione
+## Compiling
 ```
 mpicc ./parallelX.c ./mycollective/mycollective.c -o parallelX.out -lm
 ```
-N.B. Sostuire *X* con la versione della soluzione (*1* o *2*).
+Note: Replace *X* with the version of the solution (*1* or *2*).
 
-N.B. Il flag *-lm* serve a linkare la libreria math.h.
+Note: The *-lm* flag is used to link the math.h library.
 
-## Esecuzione
+## Execution
 ```
 mpirun --allow-run-as-root -np {np} parallelX.out {nBodies} {nIters} {resultsFileName}
 ```
 ### Parametri per l'esecuzione
 
-| Parametro | Descrizione | Default |
+| Parameter | Description | Default |
 | ----------- | ----------- | ----------- |
-| np | numero di processi che partecipano alla computazione | NA
-| nBodies | numero di bodies che faranno parte del problema | 10000
-| nIters | numero di iterazioni per le quali calcolare velocities e posizioni dei bodies | 5
-| resultsFileName | il path del file che verrà creato per salvare il risultato dell'esecuzione | "../results.txt"
+| np | number of processes participating in the computation | NA
+| nBodies | number of bodies that will be part of the problem | 10000
+| nIters | number of iterations for which velocities and positions of the bodies will be calculated | 5
+| resultsFileName | the path to the file that will be created to save the result of the execution | "../results.txt"
 
-# Correttezza
-Per verificare la correttezza delle implementazioni proposte sono state eseguite le due soluzioni in modalità sequenziale. In seguito sono stati confrontati i risultati ottenuti con quelli delle esecuzioni in modalità concorrente, a 2 e 4 processi. Tali esperimenti sono stati eseguiti sull'[immagine docker](https://hub.docker.com/r/spagnuolocarmine/docker-mpi) messa a disposizione contestualmente al corso di PCPC.
+# Correctness
+To verify the correctness of the proposed implementations, the two solutions were run in sequential mode. Then the results obtained were compared with those of the concurrent, 2- and 4-process mode executions. These experiments were performed on the [docker image](https://hub.docker.com/r/spagnuolocarmine/docker-mpi) made available during the PCPC course.
 
-È possibile affermare che le soluzioni proposte sono *corrette* in quanto, fissando il numero di bodies e le proprietà iniziali di ciascuno, esse restituiscono risultati analoghi a prescindere dal numero di processi utilizzati per risolvere l'istanza del problema.
+It is possible to say that the proposed solutions are *correct* in that, by fixing the number of bodies and the initial properties of each, they return similar results regardless of the number of processes used to solve the problem instance.
 
-Di seguito alcuni snippets dei file di output delle esecuzioni su 2000 bodies, 10 iterazioni e 1 - 2 - 4 processi. I file completi sono disponibili in repo, nella cartella [results/correctness](https://github.com/YantCaccia/NBody/tree/main/results/correctness).
+Below are some snippets of the output files of the runs on 2000 bodies, 10 iterations and 1 - 2 - 4 processes. The complete files are available in the repo, in the folder [results/correctness](https://github.com/YantCaccia/NBody/tree/main/results/correctness).
 
-## Soluzione 1
-### 1 processo
+## Solution 1
+### 1 process
 ```
 Total time: 4.556783s
 
@@ -308,7 +310,7 @@ p[3].vx: 31.029	p[3].vy: -38.062	p[3].vz: 29.727
 p[4].x: 4.880	p[4].y: 2.188	p[4].z: 9.385
 p[4].vx: 70.928	p[4].vy: 32.306	p[4].vz: 135.201
 ```
-### 2 processi
+### 2 processes
 ```
 Total time: 2.353013s
 
@@ -327,7 +329,7 @@ p[3].vx: 31.029	p[3].vy: -38.062	p[3].vz: 29.727
 p[4].x: 4.880	p[4].y: 2.188	p[4].z: 9.385
 p[4].vx: 70.928	p[4].vy: 32.306	p[4].vz: 135.201
 ```
-### 4 processi
+### 4 processes
 ```
 Total time: 1.378734s
 
@@ -347,8 +349,8 @@ p[4].x: 4.880	p[4].y: 2.188	p[4].z: 9.385
 p[4].vx: 70.928	p[4].vy: 32.306	p[4].vz: 135.201
 ```
 
-## Soluzione 2
-### 1 processo
+## Solution 2
+### 1 process
 ```
 Total time: 4.561903s
 
@@ -367,7 +369,7 @@ p[3].vx: 31.029	p[3].vy: -38.062	p[3].vz: 29.727
 p[4].x: 4.880	p[4].y: 2.188	p[4].z: 9.385
 p[4].vx: 70.928	p[4].vy: 32.306	p[4].vz: 135.201
 ```
-### 2 processi
+### 2 processes
 ```
 Total time: 2.401930s
 
@@ -386,7 +388,7 @@ p[3].vx: 31.030	p[3].vy: -38.039	p[3].vz: 29.723
 p[4].x: 4.880	p[4].y: 2.188	p[4].z: 9.385
 p[4].vx: 70.928	p[4].vy: 32.306	p[4].vz: 135.200
 ```
-### 4 processi
+### 4 processes
 ```
 Total time: 1.332988s
 
@@ -407,31 +409,31 @@ p[4].vx: 70.928	p[4].vy: 32.306	p[4].vz: 135.200
 ```
 
 # Benchmarks
-Per effettuare i benchmarks è stato utilizzato un cluster di 4 istanze Compute Engine di Google Cloud di tipo e2-standard-8. Ciascuna istanza offre 32GB di RAM e 8vCPU; di queste, solo 4 sono realmente core fisici, per un totale di 16 core effettivi per l'intero cluster.
+To perform the benchmarks, a cluster of 4 Google Cloud Compute Engine instances of the e2-standard-8 type was used. Each instance offers 32GB of RAM and 8vCPU; of these, only 4 are real physical cores, for a total of 16 effective cores for the entire cluster.
 
-Sono state testate sia la scalabilità forte che la scalabilità debole *per entrambe le soluzioni*.
-Di seguito sono riportati alcuni grafici che raffigurano i risultati ottenuti.
-Per maggior precisione e più dettagli di ciascuna istanza del problema, si rimanda alla [cartella contente i file di output](https://github.com/YantCaccia/NBody/tree/main/results).
-## Scalabilità forte
-Per la scalabilità forte è stata eseguita un'istanza del problema con 10k bodies e 10 iterazioni, variando di volta in volta il numero di processi partecipanti al computo.
+Both strong scalability and weak scalability were tested *for both solutions*.
+Below are some graphs that depict the results obtained.
+For greater precision and more details of each problem instance, please refer to the [folder containing the output files](https://github.com/YantCaccia/NBody/tree/main/results).
+## Strong scalability
+For strong scalability, an instance of the problem was run with 10k bodies and 10 iterations, varying the number of processes participating in the computation each time.
 
 ![img](images/strongP1.png)
 
 
 ![img](images/strongP2.png)
 
-## Scalabilità debole
-Per la scalabilità debole si è scelto di eseguire un'istanza del problema con 2k bodies per ciascun processo e 10 iterazioni. In totale quindi il numero di bodies è variato da 2k a 32k.
+## Weak scalability
+For weak scalability, we chose to run an instance of the problem with 2k bodies for each process and 10 iterations. In total, the number of bodies varied from 2k to 32k.
 
 ![img](images/weakP1.png)
 
 
 ![img](images/weakP2.png)
 
-# Conclusioni
+# Conclusions
 
-In linea generale è possibile affermare che la distribuzione del carico di lavoro su più processi e la loro parallelizzazione ha permesso di raggiungere risultati soddisfacenti. I benchmarks di scalabilità forte hanno evidenziato che il tempo di esecuzione dei due risolutori diminuisce sempre all'aumentare del numero di processi che partecipano alla computazione. È probabile che esso possa diminuire ancora aumentando il numero di processi oltre l'attuale soglia di 16. Allo stato attuale e considerando solo i run i cui output sono in repo, lo speedup massimo ottenuto è pari a 15.5, con la Soluzione 2.
+Generally speaking, it can be said that the distribution of the workload on multiple processes and their parallelization has allowed us to achieve satisfactory results. The strong scalability benchmarks have highlighted that the execution time of the two solvers always decreases as the number of processes participating in the computation increases. It is likely that it can decrease further by increasing the number of processes beyond the current threshold of 16. At the current stage and considering only the runs whose outputs are in repo, the maximum speedup obtained is equal to 15.5, with Solution 2.
 
-I risultati ottenuti dai benchmarks di scalabilità debole sono invece meno soddisfacenti. Il tempo di esecuzione all'aumentare dei processi (e quindi del numero di bodies totali) è sempre aumentato, mentre l'obiettivo (corrispondente all'ottimo desiderato, quasi impossibile da ottenere nel contesto in cui si è lavorato) era che rimanesse costante.
+The results obtained by the weak scalability benchmarks are less satisfactory. The execution time as the number of processes (and therefore the total number of bodies) has always increased, while the objective (corresponding to the desired optimum, almost impossible to obtain in the context in which we worked) was that it remained constant.
 
-Ciò che sorprende maggiormente è che entrambe le versioni del risolutore hanno ottenuto performance praticamente identiche. I tempi di esecuzione sono molto vicini (variano di decimi di secondo) e gli speedup ottenuti sono analoghi (a parità di numero di bodies e di processi), come è possibile verificare dai file di output e dai grafici poco sopra. Ciò accade nonostante le differenze nelle modalità di comunicazione e sincronizzazione tra processi siano non banali. In particolare l'utilizzo di comunicazione in modalità non bloccante e la taglia minore di ciascun messaggio scambiato (ogni processo invia / riceve solo una parte del totale dei bodies) suggerirebbero che la Soluzione 2 sia più veloce. Invece, l'overhead introdotto dall'elevato numero di messaggi scambiati nella Soluzione 2 (ogni processo invia e riceve a / da *tutti* gli altri processi) compensa la taglia più grande dei messaggi scambiati dalla Soluzione 1. In tale implementazione il numero di messaggi è minore, poichè ad ogni iterazione ogni processo invia e riceve solo al / dal master, ma ciascun messaggio è più grande in quanto viene scambiato l'array completo di bodies. 
+What is most surprising is that both versions of the solver have obtained practically identical performances. The execution times are very close (they vary by tenths of a second) and the speedups obtained are similar (for the same number of bodies and processes), as can be seen from the output files and the graphs above. This happens despite the differences in the communication and synchronization modes between processes being non-trivial. In particular, the use of non-blocking communication and the smaller size of each exchanged message (each process sends / receives only a portion of the total bodies) would suggest that Solution 2 is faster. Instead, the overhead introduced by the high number of messages exchanged in Solution 2 (each process sends and receives to / from *all* the other processes) compensates for the larger size of the messages exchanged by Solution 1. In this implementation the number of messages is smaller, since at each iteration each process sends and receives only to / from the master, but each message is larger since the complete array of bodies is exchanged.
